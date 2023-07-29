@@ -56,7 +56,7 @@ func (a *indexer) IndexLastNBlock(ctx context.Context, n uint64) error {
 		return err
 	}
 
-	startBlock :=  recentBlockNum-uint64(n)
+	startBlock := recentBlockNum-uint64(n)
 	endBlock := recentBlockNum
 	for i := startBlock; i <= endBlock; i++ {
 		a.IndexBlockAndTXsByNumber(ctx, i)

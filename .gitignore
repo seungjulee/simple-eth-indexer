@@ -1,3 +1,5 @@
 *.db
 prompt.md
 config.yml
+
+bin/*

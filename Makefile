@@ -12,3 +12,9 @@ run_indexer:
 
 run_server:
 	go run ./cmd/server/main.go config.yml
+
+run_example_get_all_events_by_address:
+	curl --request "POST" \
+    --header "Content-Type: application/json" \
+    --data '{"address": "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC"}' \
+    http://localhost:8080/twirp/rpc.SimpleEthExplorer/GetAllEventsByAddress
