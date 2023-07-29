@@ -15,12 +15,12 @@ type ContractEventLog struct {
 	// list of topics provided by the contract.
 	Topics string // []hash
 	// supplied by the contract, usually ABI-encoded
-	Data []byte
+	Data string
 
 	// Derived fields. These fields are filled in by the node
 	// but not secured by consensus.
 	// block in which the transaction was included
-	BlockNumber uint64
+	BlockNumber uint64 `gorm:"index"`
 	// hash of the transaction
 	TxHash string `gorm:"index:idx_tx_log,priority:1"`
 	// index of the transaction in the block
@@ -39,7 +39,7 @@ func ConvertClientEventToModelEvent(evt *types.Log) ContractEventLog {
 	event := ContractEventLog{
 		Address: evt.Address.Hex(),
 		Topics: "",
-		Data: evt.Data,
+		Data: string(evt.Data),
 		BlockNumber: evt.BlockNumber,
 		TxHash: evt.TxHash.Hex(),
 		TxIndex: evt.TxIndex,

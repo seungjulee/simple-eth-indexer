@@ -41,7 +41,7 @@ func (a *indexer) SchedulePeriodicIndex(interval time.Duration) error {
 	for {
 		select {
 		case <-blockTicker.C:
-			a.IndexLastNBlock(ctx, uint64(50))
+			a.IndexLastNBlock(ctx, uint64(2))
 		}
 	}
 }

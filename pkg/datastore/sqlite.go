@@ -75,3 +75,42 @@ func (s *sqliteDB) SaveEvents(ctx context.Context, events []model.ContractEventL
 
 	return nil
 }
+
+func (s *sqliteDB) GetAllEventsByAddress(ctx context.Context, address string) ([]model.ContractEventLog, uint64, uint64, error) {
+	if address == "" {
+		return []model.ContractEventLog{}, 0, 0, errors.New("address is empty")
+	}
+
+	// find all events by address
+	// SELECT * FROM contract_event_logs WHERE address = ?;
+	logger.Debug("fetching events for address", zap.String("address", address))
+	var events []model.ContractEventLog
+	if err := s.db.Where("address = ?", address).Find(&events).Error; err != nil {
+		return []model.ContractEventLog{}, 0, 0, err
+	}
+
+	// SELECT MIN(block_number) as start_block, MAX(block_number) as end_block FROM contract_event_logs WHERE address = ? GROUP BY address;
+	var blockNums map[string]interface{}
+	if err := s.db.Model(&model.ContractEventLog{}).Select("MIN(block_number) as start, MAX(block_number) as end").Group("address").First(&blockNums).Error; err != nil {
+		return []model.ContractEventLog{}, 0, 0, err
+	}
+	startBlockRaw, ok := blockNums["start"]
+	if !ok {
+		return []model.ContractEventLog{}, 0, 0, errors.New("could not find start_block for GetAllEventsByAddress")
+	}
+	startBlock, ok := startBlockRaw.(int64)
+	if !ok {
+		return []model.ContractEventLog{}, 0, 0, errors.New("could not parse start_block for GetAllEventsByAddress")
+	}
+
+	endBlockRaw, ok := blockNums["end"]
+	if !ok {
+		return []model.ContractEventLog{}, 0, 0, errors.New("could not find end_block for GetAllEventsByAddress")
+	}
+	endBlock, ok := endBlockRaw.(int64)
+	if !ok {
+		return []model.ContractEventLog{}, 0, 0, errors.New("could not parse end_block for GetAllEventsByAddress")
+	}
+
+	return events, uint64(startBlock), uint64(endBlock), nil
+}

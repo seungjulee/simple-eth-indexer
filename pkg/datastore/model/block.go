@@ -23,7 +23,7 @@ type Block struct {
 	GasLimit uint64
 	GasUsed uint64
 	Time time.Time
-	Extra []byte
+	Extra string
 	Nonce uint64
 	BaseFee string // big int
 }
@@ -43,7 +43,7 @@ func ConvertClientBlockToBlockAndTXs(b *types.Block) (*Block, []Transaction) {
 		GasLimit: b.GasLimit(),
 		GasUsed: b.GasUsed(),
 		Time: time.Unix(int64(b.Time()), 0),
-		Extra: b.Extra(),
+		Extra: string(b.Extra()),
 		Nonce: b.Header().Nonce.Uint64(),
 		BaseFee: b.BaseFee().String(),
 	}

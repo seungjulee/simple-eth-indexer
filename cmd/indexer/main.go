@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -67,6 +68,11 @@ func main() {
 	a := indexer.New(ethClient, db)
 	err = a.IndexLastNBlock(ctx, 50)
 	if err != nil {
+		logger.Fatal(err.Error())
+		panic(err)
+	}
+
+	if err := a.SchedulePeriodicIndex(10 * time.Second); err != nil {
 		logger.Fatal(err.Error())
 		panic(err)
 	}
