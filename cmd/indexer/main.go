@@ -55,6 +55,7 @@ func main() {
 		panic(err)
 	}
 	ethClient := ethclient.NewClient(rpcClient)
+	defer ethClient.Close()
 
 	db, err := datastore.NewSqllite(cfg.SqliteConfig)
 	if err != nil {
