@@ -3,9 +3,11 @@ package datastore
 import (
 	"context"
 
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/seungjulee/simple-eth-indexer/pkg/datastore/model"
 )
 
 type Datastore interface {
-	SaveBlockAndTXs(ctx context.Context, block *types.Block) error
+	SaveBlock(ctx context.Context, block *model.Block) error
+	SaveTXs(ctx context.Context, txs []model.Transaction) error
+	SaveEvents(ctx context.Context, events []model.ContractEventLog) error
 }

@@ -2,8 +2,8 @@ package datastore
 
 import (
 	"context"
+	"errors"
 
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/seungjulee/simple-eth-indexer/pkg/datastore/model"
 	"github.com/seungjulee/simple-eth-indexer/pkg/logger"
 	"go.uber.org/zap"
@@ -29,6 +29,7 @@ func NewSqllite(cfg *SqliteConfig) (Datastore, error) {
 	logger.Info("migrate the schema tables")
 	db.AutoMigrate(&model.Block{})
 	db.AutoMigrate(&model.Transaction{})
+	db.AutoMigrate(&model.ContractEventLog{})
 
 	return &sqliteDB{
 		db: db,
@@ -39,15 +40,23 @@ type sqliteDB struct {
 	db *gorm.DB
 }
 
-func (s *sqliteDB) SaveBlockAndTXs(ctx context.Context, block *types.Block) error {
-	blk, txs := model.ConvertClientBlockToBlockAndTXs(block)
-
-	logger.Debug("inserting block into db", zap.Any("block_hash", blk.Hash))
+func (s *sqliteDB) SaveBlock(ctx context.Context, blk *model.Block) error {
+	if blk == nil {
+		return errors.New("expected non-nil block, but got nil")
+	}
+	logger.Debug("inserting block into db", zap.Int("block_number", int(blk.Number)), zap.Any("block_hash", blk.Hash))
 	if err := s.db.Create(blk).Error; err != nil {
 		return err
 	}
 
-	logger.Debug("inserting txs for block into db", zap.Any("block_hash", blk.Hash))
+	return nil
+}
+
+func (s *sqliteDB) SaveTXs(ctx context.Context, txs []model.Transaction) error {
+	if len(txs) == 0 {
+		return errors.New("expected more than 0 txs, but got 0")
+	}
+	logger.Debug("inserting txs for block into db", zap.Int("block_number", int(txs[0].BlockNumber)), zap.Any("block_hash", txs[0].BlockHash))
 	if err := s.db.CreateInBatches(txs, len(txs)).Error; err != nil {
 		return err
 	}
@@ -55,26 +64,14 @@ func (s *sqliteDB) SaveBlockAndTXs(ctx context.Context, block *types.Block) erro
 	return nil
 }
 
-// func (s *sqliteDB) SaveNetInfoAndPeer(netinfo *model.NetInfo, peers []model.Peer) error {
-// 	logger.Debug("inserting net_info into db", zap.Any("net_info", netinfo))
-// 	if err := s.db.Create(netinfo).Error; err != nil {
-// 		return err
-// 	}
+func (s *sqliteDB) SaveEvents(ctx context.Context, events []model.ContractEventLog) error {
+	if len(events) == 0 {
+		return errors.New("expected more than 0 events, but got 0")
+	}
+	logger.Debug("inserting events for tx for block into db", zap.Int("block_number", int(events[0].BlockNumber)), zap.Any("block_hash", events[0].BlockHash),  zap.Any("tx_hash", events[0].TxHash))
+	if err := s.db.CreateInBatches(events, len(events)).Error; err != nil {
+		return err
+	}
 
-// 	logger.Debug("inserting peers into db", zap.Any("peers", peers))
-// 	if err := s.db.CreateInBatches(peers, len(peers)).Error; err != nil {
-// 		return err
-// 	}
-
-// 	return nil
-// }
-
-// func (s *sqliteDB) GetBlockByHeight(height int64) (*model.Block, error) {
-// 	var block model.Block
-// 	logger.Debug("get blocks by height", zap.Any("height", height))
-// 	if err := s.db.First(&block, "height = ?", height).Error; err != nil {
-// 		// fmt.Println(err)
-// 		return nil, err
-// 	}
-// 	return &block, nil
-// }
+	return nil
+}
